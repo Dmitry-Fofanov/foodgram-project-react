@@ -1,6 +1,8 @@
+from http import HTTPStatus
+
 from django.db.models import Count, Exists, OuterRef, Sum
-from django.http import Http404
 from django.http.response import HttpResponse
+from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -21,8 +23,7 @@ class FoodgramUserViewSet(UserViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         user = self.request.user
-        is_subscribed = Follow.objects.filter(
-            user=user.id,
+        is_subscribed = user.following.filter(
             author=OuterRef('id'),
         )
         queryset = queryset.annotate(
@@ -78,13 +79,13 @@ class RecipeViewSet(ModelViewSet):
         if data.get('tags'):
             queryset = queryset.filter(tags__slug__in=data.getlist('tags'))
 
-        is_favorited = Favorite.objects.filter(
+        user = self.request.user
+
+        is_favorited = user.favorite_set.filter(
             recipe=OuterRef('id'),
-            user=self.request.user.id,
         )
-        is_in_shopping_cart = ShoppingCart.objects.filter(
+        is_in_shopping_cart = user.shoppingcart_set.filter(
             recipe=OuterRef('id'),
-            user=self.request.user.id,
         )
         queryset = queryset.annotate(
             is_favorited=Exists(is_favorited),
@@ -153,16 +154,17 @@ class FlagView(APIView):
     target_name = 'recipe'
 
     def get_target(self, id):
-        try:
-            return self.target_model.objects.get(id=id)
-        except self.target_model.DoesNotExist:
-            raise Http404
+        return get_object_or_404(self.target_model, id=id)
 
     def post(self, request, id):
         target = self.get_target(id)
         user = request.user
         if self.model.objects.filter(
             user=user,
+            # Чтобы не дублировать код в FollowView,
+            # имя поля вынесено в переменную.
+            # Это наименее топорный метод использования
+            # переменной как имени аргумента, что я нашёл.
             **{self.target_name: target},
         ).exists():
             raise self.duplicate_exception()
@@ -175,7 +177,7 @@ class FlagView(APIView):
                 target,
                 context={'request': request},
             ).data,
-            status=201,
+            status=HTTPStatus.CREATED,
         )
 
     def delete(self, request, id):
@@ -191,7 +193,7 @@ class FlagView(APIView):
             **{self.target_name: target},
         ).delete()
         return Response(
-            status=204,
+            status=HTTPStatus.NO_CONTENT,
         )
 
 
