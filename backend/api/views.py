@@ -161,10 +161,6 @@ class FlagView(APIView):
         user = request.user
         if self.model.objects.filter(
             user=user,
-            # Чтобы не дублировать код в FollowView,
-            # имя поля вынесено в переменную.
-            # Это наименее топорный метод использования
-            # переменной как имени аргумента, что я нашёл.
             **{self.target_name: target},
         ).exists():
             raise self.duplicate_exception()
