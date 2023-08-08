@@ -146,13 +146,15 @@ REST_FRAMEWORK = {
 DJOSER = {
     'HIDE_USERS': False,
     'LOGIN_FIELD': 'email',
-    'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
-    'user_list': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
+    'PERMISSIONS': {
+        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+        'user_list': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+    },
     'SERIALIZERS': {
         'user': 'api.serializers.FoodgramUserSerializer',
         'current_user': 'api.serializers.FoodgramUserSerializer',
-        'user_create': 'api.serializers.FoodgramUserCreateSerializer'
-    }
+        'user_create': 'api.serializers.FoodgramUserCreateSerializer',
+    },
 }
 
 UPLOADED_FILES_USE_URL = True
