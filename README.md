@@ -1,9 +1,3 @@
-username: admin
-
-password: admin
-
-@address: [foodgram.onthewifi.com](foodgram.onthewifi.com)
-
 # Foodgram Project
 
 ## Description
