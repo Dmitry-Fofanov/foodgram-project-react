@@ -52,8 +52,8 @@ GET localhost/api/recipes/
 ```json
 {
   "count": 123,
-  "next": "http://foodgram.example.org/api/recipes/?page=4",
-  "previous": "http://foodgram.example.org/api/recipes/?page=2",
+  "next": "http://localhost/api/recipes/?page=4",
+  "previous": "http://localhost/api/recipes/?page=2",
   "results": [
     {
       "id": 0,
@@ -84,7 +84,7 @@ GET localhost/api/recipes/
       "is_favorited": true,
       "is_in_shopping_cart": true,
       "name": "string",
-      "image": "localhost/media/recipes/images/image.jpeg",
+      "image": "http://localhost/media/recipes/images/image.jpeg",
       "text": "string",
       "cooking_time": 1
     }
