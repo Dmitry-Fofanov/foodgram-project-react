@@ -90,7 +90,7 @@ class RecipeViewSet(ModelViewSet):
         queryset = queryset.annotate(
             is_favorited=Exists(is_favorited),
             is_in_shopping_cart=Exists(is_in_shopping_cart),
-        ).all()
+        ).distinct()
         return queryset
 
     def get_serializer_class(self):
@@ -151,23 +151,34 @@ class FlagView(APIView):
     doesnt_exist_exception = None
     target_model = Recipe
     target_serializer = RecipeShortSerializer
-    target_name = 'recipe'
 
     def get_target(self, id):
         return get_object_or_404(self.target_model, id=id)
 
+    def exists(self, user, target):
+        return self.model.objects.filter(
+            user=user,
+            recipe=target,
+        ).exists()
+
+    def save(self, user, target):
+        self.model(
+            user=user,
+            recipe=target,
+        ).save()
+
+    def delete_object(self, user, target):
+        self.model.objects.get(
+            user=user,
+            recipe=target,
+        ).delete()
+
     def post(self, request, id):
         target = self.get_target(id)
         user = request.user
-        if self.model.objects.filter(
-            user=user,
-            **{self.target_name: target},
-        ).exists():
+        if self.exists(user, target):
             raise self.duplicate_exception()
-        self.model(
-            user=user,
-            **{self.target_name: target},
-        ).save()
+        self.save(user, target)
         return Response(
             self.target_serializer(
                 target,
@@ -179,15 +190,9 @@ class FlagView(APIView):
     def delete(self, request, id):
         target = self.get_target(id)
         user = request.user
-        if not self.model.objects.filter(
-            user=user,
-            **{self.target_name: target},
-        ).exists():
+        if not self.exists(user, target):
             raise self.doesnt_exist_exception()
-        self.model.objects.get(
-            user=user,
-            **{self.target_name: target},
-        ).delete()
+        self.delete_object(user, target)
         return Response(
             status=HTTPStatus.NO_CONTENT,
         )
@@ -231,7 +236,24 @@ class FollowView(FlagView):
     doesnt_exist_exception = exceptions.NotFollowingException
     target_model = User
     target_serializer = FoodgramUserWithRecipesSerializer
-    target_name = 'author'
+
+    def exists(self, user, target):
+        return self.model.objects.filter(
+            user=user,
+            author=target,
+        ).exists()
+
+    def save(self, user, target):
+        self.model(
+            user=user,
+            author=target,
+        ).save()
+
+    def delete_object(self, user, target):
+        self.model.objects.get(
+            user=user,
+            author=target,
+        ).delete()
 
 
 class FollowGetView(OnlyListViewset):

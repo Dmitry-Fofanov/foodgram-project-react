@@ -164,20 +164,23 @@ class RecipePostSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def create(self, validated_data):
-        ingredients = validated_data.pop('ingredients')
-        instance = super().create(validated_data)
-
+    def bulk_create(self, recipe, ingredients):
         ingredient_objects = []
         for data in ingredients:
             ingredient_objects.append(
                 RecipeIngredient(
-                    recipe=instance,
+                    recipe=recipe,
                     ingredient=data['ingredient'],
                     amount=data['amount'],
                 )
             )
         RecipeIngredient.objects.bulk_create(ingredient_objects)
+
+    def create(self, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        instance = super().create(validated_data)
+
+        self.bulk_create(instance, ingredients)
 
         return instance
 
@@ -185,18 +188,9 @@ class RecipePostSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         instance = super().update(instance, validated_data)
 
-        ingredient_objects = []
         if ingredients:
             instance.ingredients.clear()
-            for data in ingredients:
-                ingredient_objects.append(
-                    RecipeIngredient(
-                        recipe=instance,
-                        ingredient=data['ingredient'],
-                        amount=data['amount'],
-                    )
-                )
-        RecipeIngredient.objects.bulk_create(ingredient_objects)
+            self.bulk_create(instance, ingredients)
 
         return instance
 
