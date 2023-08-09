@@ -45,7 +45,7 @@ You can also access the admin panel at [localhost/admin/](localhost/admin/), the
 #### Query
 
 ```http
-GET localhost/api/recipes/
+GET http://localhost/api/recipes/?page=3
 ```
 
 #### Response
